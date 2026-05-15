@@ -103,10 +103,10 @@ export default function Page() {
       canvas.toDataURL("image/png");
 
     const pdf = new jsPDF({
-      orientation: "landscape",
-      unit: "mm",
-      format: "a3",
-    });
+  orientation: "landscape",
+  unit: "mm",
+  format: "a4",
+});
 
     const pdfWidth =
       pdf.internal.pageSize.getWidth();
@@ -245,10 +245,10 @@ export default function Page() {
 
           <div
             ref={pdfRef}
-            className="overflow-x-auto bg-[#09090b] border border-[#27272a] rounded-3xl p-2"
+            className="bg-[#09090b] border border-[#27272a] rounded-3xl overflow-hidden"
           >
 
-            <table className="w-full border-collapse table-fixed">
+            <table className="w-full table-fixed border-collapse">
               <thead>
 
                 <tr className="bg-[#eab308] text-black">
@@ -314,17 +314,31 @@ export default function Page() {
 
                       <td className="p-4">
 
-                        <input
-                          value={funcionario.nome}
-                          onChange={(e) =>
-                            atualizarFuncionario(
-                              index,
-                              "nome",
-                              e.target.value
-                            )
-                          }
-                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
-                        />
+                       <textarea
+  rows={2}
+  value={funcionario.obs}
+  onChange={(e) =>
+    atualizarFuncionario(
+      index,
+      "obs",
+      e.target.value
+    )
+  }
+  className="
+    w-full
+    bg-[#18181b]
+    border
+    border-[#3f3f46]
+    rounded-md
+    px-2
+    py-1
+    text-sm
+    text-white
+    outline-none
+    resize-none
+    focus:border-[#eab308]
+  "
+/>
 
                       </td>
 
