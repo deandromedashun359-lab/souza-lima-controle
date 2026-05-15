@@ -5,44 +5,85 @@ import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-type Funcionario = {
-  nome: string;
-  setor: string;
+type Registro = {
   chegada?: string;
   saida?: string;
   obs?: string;
 };
+
+type Funcionario = {
+  nome: string;
+  setor: string;
+  registros: Registro[];
+};
 export default function Page() {
 
   const pdfRef = useRef<HTMLDivElement>(null);
-
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [nome, setNome] = useState("");
   const [setor, setSetor] = useState("");
   const [chegada, setChegada] = useState("");
   const [saida, setSaida] = useState("");
   const [obs, setObs] = useState("");
 
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+
 
   function adicionarFuncionario() {
 
-    if (!nome || !setor) return;
+  if (!nome || !setor) return;
 
-    const novoFuncionario: Funcionario = {
-      nome,
-      setor,
-      chegada,
-      saida,
-      obs,
-    };
-  setFuncionarios((prev) => [...prev, novoFuncionario]);
+  const novoRegistro: Registro = {
+    chegada,
+    saida,
+    obs,
+  };
 
-    setNome("");
-    setSetor("");
-    setChegada("");
-    setSaida("");
-    setObs("");
-  }
+  setFuncionarios((prev) => {
+
+    const funcionarioExistente = prev.find(
+      (f) =>
+        f.nome.toLowerCase() === nome.toLowerCase()
+    );
+
+    // funcionário já existe
+    if (funcionarioExistente) {
+
+      return prev.map((f) => {
+
+        if (
+          f.nome.toLowerCase() === nome.toLowerCase()
+        ) {
+
+          return {
+            ...f,
+            registros: [
+              ...f.registros,
+              novoRegistro,
+            ],
+          };
+        }
+
+        return f;
+      });
+    }
+
+    // novo funcionário
+    return [
+      ...prev,
+      {
+        nome,
+        setor,
+        registros: [novoRegistro],
+      },
+    ];
+  });
+
+  setNome("");
+  setSetor("");
+  setChegada("");
+  setSaida("");
+  setObs("");
+}
 
   function removerFuncionario(index: number) {
 
@@ -194,79 +235,98 @@ export default function Page() {
 
             <div className="overflow-x-auto rounded-2xl border border-zinc-800">
 
-              <table className="w-full min-w-[900px] border-collapse">
+             <div className="grid gap-6">
 
-                <thead>
-                   <tr className="bg-yellow-500 text-black text-left">
+  {funcionarios.map((funcionario, index) => (
 
-                    <th className="p-4">Funcionário</th>
-                    <th className="p-4">Setor</th>
-                    <th className="p-4">Chegada</th>
-                    <th className="p-4">Saída</th>
-                    <th className="p-4">Observações</th>
-                    <th className="p-4 text-center">Ações</th>
+    <div
+      key={index}
+      className="bg-black border border-zinc-800 rounded-3xl p-6"
+    >
 
-                  </tr>
+      <div className="flex items-center justify-between mb-6">
 
-                </thead>
+        <div>
 
-                <tbody>
+          <h2 className="text-3xl font-black text-yellow-400">
+            {funcionario.nome}
+          </h2>
 
-                  {funcionarios.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="text-center p-10 text-zinc-500 bg-black"
-                      >
-                        Nenhum funcionário registrado.
-                      </td>
-                    </tr>
-                  )}
+          <p className="text-zinc-400">
+            {funcionario.setor}
+          </p>
 
-                  {funcionarios.map((funcionario, index) => (
+        </div>
 
-                    <tr
-                      key={index}
-                      className="border-t border-zinc-800 bg-black hover:bg-zinc-950 transition-all"
-                    >
+        <button
+          onClick={() => removerFuncionario(index)}
+          className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl"
+        >
+          Remover
+        </button>
 
-                      <td className="p-4 font-bold text-yellow-400">
-                        {funcionario.nome}
-                      </td>
+      </div>
 
-                      <td className="p-4 text-zinc-300">
-                        {funcionario.setor}
-                      </td>
+      <div className="grid gap-4">
 
-                      <td className="p-4">
-                        {funcionario.chegada || "--:--"}
-                      </td>
+        {funcionario.registros.map(
+          (registro, registroIndex) => (
 
-                      <td className="p-4">
-                        {funcionario.saida || "--:--"}
-                      </td>
+            <div
+              key={registroIndex}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5"
+            >
 
-                      <td className="p-4 max-w-[300px] break-words text-zinc-300">
-                        {funcionario.obs || "Sem observações"}
-                      </td>
-                        <td className="p-4 text-center">
+              <div className="grid md:grid-cols-3 gap-4">
 
-                        <button
-                          onClick={() => removerFuncionario(index)}
-                          className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl font-semibold transition-all"
-                        >
-                          Remover
-                        </button>
+                <div>
 
-                      </td>
+                  <p className="text-zinc-500 text-sm">
+                    Chegada
+                  </p>
 
-                    </tr>
+                  <p className="text-xl font-bold">
+                    {registro.chegada || "--:--"}
+                  </p>
 
-                  ))}
+                </div>
 
-                </tbody>
+                <div>
 
-              </table>
+                  <p className="text-zinc-500 text-sm">
+                    Saída
+                  </p>
+
+                  <p className="text-xl font-bold">
+                    {registro.saida || "--:--"}
+                  </p>
+
+                </div>
+
+                <div>
+
+                  <p className="text-zinc-500 text-sm">
+                    Observações
+                  </p>
+
+                  <p>
+                    {registro.obs || "Sem observações"}
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+          )
+        )}
+
+      </div>
+
+    </div>
+  ))}
+
+</div>
 
             </div>
 
