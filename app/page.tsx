@@ -5,201 +5,234 @@ import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-type Registro = {
-  chegada?: string;
-  saida?: string;
-  obs?: string;
-};
-
 type Funcionario = {
   nome: string;
   setor: string;
-  registros: Registro[];
+  data: string;
+  chegada: string;
+  saida: string;
+  obs: string;
 };
+
 export default function Page() {
 
   const pdfRef = useRef<HTMLDivElement>(null);
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+
+  const [funcionarios, setFuncionarios] =
+    useState<Funcionario[]>([]);
+
   const [nome, setNome] = useState("");
   const [setor, setSetor] = useState("");
+  const [data, setData] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [chegada, setChegada] = useState("");
   const [saida, setSaida] = useState("");
   const [obs, setObs] = useState("");
 
-
-
   function adicionarFuncionario() {
 
-  if (!nome || !setor) return;
+    if (!nome || !setor) return;
 
-  const novoRegistro: Registro = {
-    chegada,
-    saida,
-    obs,
-  };
+    const novoFuncionario: Funcionario = {
+      nome,
+      setor,
+      data,
+      chegada,
+      saida,
+      obs,
+    };
 
-  setFuncionarios((prev) => {
-
-    const funcionarioExistente = prev.find(
-      (f) =>
-        f.nome.toLowerCase() === nome.toLowerCase()
-    );
-
-    // funcionário já existe
-    if (funcionarioExistente) {
-
-      return prev.map((f) => {
-
-        if (
-          f.nome.toLowerCase() === nome.toLowerCase()
-        ) {
-
-          return {
-            ...f,
-            registros: [
-              ...f.registros,
-              novoRegistro,
-            ],
-          };
-        }
-
-        return f;
-      });
-    }
-
-    // novo funcionário
-    return [
+    setFuncionarios((prev) => [
       ...prev,
-      {
-        nome,
-        setor,
-        registros: [novoRegistro],
-      },
-    ];
-  });
+      novoFuncionario,
+    ]);
 
-  setNome("");
-  setSetor("");
-  setChegada("");
-  setSaida("");
-  setObs("");
-}
+    setNome("");
+    setSetor("");
+    setData(
+      new Date().toISOString().split("T")[0]
+    );
+    setChegada("");
+    setSaida("");
+    setObs("");
+  }
 
   function removerFuncionario(index: number) {
 
-    setFuncionarios((current) =>
-      current.filter((_, i) => i !== index)
+    setFuncionarios((prev) =>
+      prev.filter((_, i) => i !== index)
     );
   }
+
+  function atualizarFuncionario(
+    index: number,
+    campo: keyof Funcionario,
+    valor: string
+  ) {
+
+    setFuncionarios((prev) =>
+      prev.map((funcionario, i) => {
+
+        if (i === index) {
+
+          return {
+            ...funcionario,
+            [campo]: valor,
+          };
+        }
+
+        return funcionario;
+      })
+    );
+  }
+
   async function exportarPDF() {
 
     const elemento = pdfRef.current;
 
     if (!elemento) return;
 
-    const canvas = await html2canvas(elemento);
+    const canvas = await html2canvas(elemento, {
+      backgroundColor: "#000000",
+      scale: 2,
+      useCORS: true,
+    });
 
-    const imgData = canvas.toDataURL("image/png");
+    const imgData =
+      canvas.toDataURL("image/png");
 
-    const pdf = new jsPDF("p", "mm", "a4");
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a3",
+    });
 
-    const larguraPDF = 210;
+    const pdfWidth =
+      pdf.internal.pageSize.getWidth();
 
-    const alturaPDF =
-      (canvas.height * larguraPDF) / canvas.width;
+    const pdfHeight =
+      (canvas.height * pdfWidth) /
+      canvas.width;
 
     pdf.addImage(
       imgData,
       "PNG",
       0,
       0,
-      larguraPDF,
-      alturaPDF
+      pdfWidth,
+      pdfHeight
     );
-    pdf.save("relatorio-souza-lima.pdf");
+
+    pdf.save(
+      "relatorio-souza-lima.pdf"
+    );
   }
 
   return (
 
     <main className="min-h-screen bg-black text-white p-6">
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1800px] mx-auto">
 
         {/* CABEÇALHO */}
 
         <div className="mb-10 text-center">
 
-          <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-yellow-600 via-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+          <h1 className="text-6xl font-black text-[#facc15]">
             Souza Lima
           </h1>
 
-          <p className="text-zinc-400 mt-3 text-lg">
+          <p className="text-[#a1a1aa] mt-3 text-xl">
             Controle de Funcionários e Plantão
           </p>
 
         </div>
 
-        <div className="grid lg:grid-cols-[400px_1fr] gap-6">
+        {/* GRID */}
+
+        <div className="grid xl:grid-cols-[420px_1fr] gap-8">
 
           {/* FORMULÁRIO */}
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 h-fit sticky top-6">
+          <div className="bg-[#18181b] border border-[#27272a] rounded-3xl p-8 h-fit sticky top-6">
 
-            <h2 className="text-2xl font-bold mb-6 text-yellow-400">
+            <h2 className="text-3xl font-bold text-[#facc15] mb-8">
               Registrar Funcionário
             </h2>
 
-            <div className="grid gap-4">
+            <div className="grid gap-5">
 
               <input
                 type="text"
                 placeholder="Nome do funcionário"
                 value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="bg-black border border-zinc-700 rounded-xl p-3 outline-none focus:border-yellow-500"
+                onChange={(e) =>
+                  setNome(e.target.value)
+                }
+                className="bg-black border border-[#3f3f46] rounded-2xl p-4 text-lg outline-none"
               />
+
               <input
                 type="text"
                 placeholder="Setor"
                 value={setor}
-                onChange={(e) => setSetor(e.target.value)}
-                className="bg-black border border-zinc-700 rounded-xl p-3 outline-none focus:border-yellow-500"
+                onChange={(e) =>
+                  setSetor(e.target.value)
+                }
+                className="bg-black border border-[#3f3f46] rounded-2xl p-4 text-lg outline-none"
+              />
+
+              <input
+                type="date"
+                value={data}
+                onChange={(e) =>
+                  setData(e.target.value)
+                }
+                className="bg-black border border-[#3f3f46] rounded-2xl p-4 text-lg outline-none"
               />
 
               <div className="grid grid-cols-2 gap-4">
+
                 <input
                   type="time"
-                  placeholder="Chegada"
                   value={chegada}
-                  onChange={(e) => setChegada(e.target.value)}
-                  className="bg-black border border-zinc-700 rounded-xl p-3 outline-none focus:border-yellow-500"
+                  onChange={(e) =>
+                    setChegada(e.target.value)
+                  }
+                  className="bg-black border border-[#3f3f46] rounded-2xl p-4 text-lg outline-none"
                 />
+
                 <input
                   type="time"
-                  placeholder="Saída"
                   value={saida}
-                  onChange={(e) => setSaida(e.target.value)}
-                  className="bg-black border border-zinc-700 rounded-xl p-3 outline-none focus:border-yellow-500"
+                  onChange={(e) =>
+                    setSaida(e.target.value)
+                  }
+                  className="bg-black border border-[#3f3f46] rounded-2xl p-4 text-lg outline-none"
                 />
+
               </div>
 
               <textarea
                 placeholder="Observações"
                 value={obs}
-                onChange={(e) => setObs(e.target.value)}
-                className="bg-black border border-zinc-700 rounded-xl p-3 min-h-[120px] outline-none focus:border-yellow-500"
+                onChange={(e) =>
+                  setObs(e.target.value)
+                }
+                className="bg-black border border-[#3f3f46] rounded-2xl p-4 min-h-[140px] text-lg outline-none"
               />
 
               <button
                 onClick={adicionarFuncionario}
-                className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold p-4 rounded-xl transition-all"
+                className="bg-[#eab308] hover:bg-[#facc15] text-black font-black p-5 rounded-2xl text-lg transition-all"
               >
-                Adicionar à Tabela
+                Adicionar Funcionário
               </button>
 
               <button
                 onClick={exportarPDF}
-                className="bg-white hover:bg-zinc-200 text-black font-bold p-4 rounded-xl transition-all"
+                className="bg-white hover:bg-[#d4d4d8] text-black font-black p-5 rounded-2xl text-lg transition-all"
               >
                 Exportar PDF
               </button>
@@ -212,123 +245,206 @@ export default function Page() {
 
           <div
             ref={pdfRef}
-            className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 overflow-hidden"
+            className="overflow-x-auto bg-[#09090b] border border-[#27272a] rounded-3xl p-2"
           >
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <table className="w-full border-collapse table-fixed">
+              <thead>
 
-              <div>
-                <h2 className="text-3xl font-bold text-yellow-400">
-                  Funcionários Registrados
-                </h2>
+                <tr className="bg-[#eab308] text-black">
 
-                <p className="text-zinc-400 mt-1">
-                  Controle operacional Souza Lima
-                </p>
-              </div>
+                  <th className="p-3 text-left text-sm w-[160px]">
+  Funcionário
+</th>
 
-              <div className="bg-yellow-500 text-black px-5 py-3 rounded-2xl font-black text-lg w-fit">
-                {funcionarios.length} Registros
-              </div>
+                  <th className="p-3 text-left text-sm w-[120px]">
+  Setor
+</th>
 
-            </div>
+                  <th className="p-3 text-left text-sm w-[130px]">
+  Data
+</th>
 
-            <div className="overflow-x-auto rounded-2xl border border-zinc-800">
+                 <th className="p-3 text-left text-sm w-[110px]">
+  Chegada
+</th>
 
-             <div className="grid gap-6">
+                  <th className="p-3 text-left text-sm w-[110px]">
+  Saída
+</th>
 
-  {funcionarios.map((funcionario, index) => (
+                <th className="p-3 text-left text-sm">
+  Observações
+</th>
 
-    <div
-      key={index}
-      className="bg-black border border-zinc-800 rounded-3xl p-6"
-    >
+                 <th className="p-3 text-center text-sm w-[120px]">
+  Ações
+</th>
 
-      <div className="flex items-center justify-between mb-6">
+                </tr>
 
-        <div>
+              </thead>
 
-          <h2 className="text-3xl font-black text-yellow-400">
-            {funcionario.nome}
-          </h2>
+              <tbody>
 
-          <p className="text-zinc-400">
-            {funcionario.setor}
-          </p>
+                {funcionarios.length === 0 && (
 
-        </div>
+                  <tr>
 
-        <button
-          onClick={() => removerFuncionario(index)}
-          className="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl"
-        >
-          Remover
-        </button>
+                    <td
+                      colSpan={7}
+                      className="text-center p-12 text-[#71717a] text-sm"
+                    >
+                      Nenhum funcionário registrado.
+                    </td>
 
-      </div>
+                  </tr>
 
-      <div className="grid gap-4">
+                )}
 
-        {funcionario.registros.map(
-          (registro, registroIndex) => (
+                {funcionarios.map(
+                  (funcionario, index) => (
 
-            <div
-              key={registroIndex}
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5"
-            >
+                    <tr
+                      key={index}
+                      className="border-t border-[#27272a] bg-black hover:bg-[#111111]"
+                    >
 
-              <div className="grid md:grid-cols-3 gap-4">
+                      {/* NOME */}
 
-                <div>
+                      <td className="p-4">
 
-                  <p className="text-zinc-500 text-sm">
-                    Chegada
-                  </p>
+                        <input
+                          value={funcionario.nome}
+                          onChange={(e) =>
+                            atualizarFuncionario(
+                              index,
+                              "nome",
+                              e.target.value
+                            )
+                          }
+                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
+                        />
 
-                  <p className="text-xl font-bold">
-                    {registro.chegada || "--:--"}
-                  </p>
+                      </td>
 
-                </div>
+                      {/* SETOR */}
 
-                <div>
+                      <td className="p-4">
 
-                  <p className="text-zinc-500 text-sm">
-                    Saída
-                  </p>
+                        <input
+                          value={funcionario.setor}
+                          onChange={(e) =>
+                            atualizarFuncionario(
+                              index,
+                              "setor",
+                              e.target.value
+                            )
+                          }
+                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
+                        />
 
-                  <p className="text-xl font-bold">
-                    {registro.saida || "--:--"}
-                  </p>
+                      </td>
 
-                </div>
+                      {/* DATA */}
 
-                <div>
+                      <td className="p-4">
 
-                  <p className="text-zinc-500 text-sm">
-                    Observações
-                  </p>
+                        <input
+                          type="date"
+                          value={funcionario.data}
+                          onChange={(e) =>
+                            atualizarFuncionario(
+                              index,
+                              "data",
+                              e.target.value
+                            )
+                          }
+                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
+                        />
 
-                  <p>
-                    {registro.obs || "Sem observações"}
-                  </p>
+                      </td>
 
-                </div>
+                      {/* CHEGADA */}
 
-              </div>
+                      <td className="p-4">
 
-            </div>
-          )
-        )}
+                        <input
+                          type="time"
+                          value={funcionario.chegada}
+                          onChange={(e) =>
+                            atualizarFuncionario(
+                              index,
+                              "chegada",
+                              e.target.value
+                            )
+                          }
+                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
+                        />
 
-      </div>
+                      </td>
 
-    </div>
-  ))}
+                      {/* SAÍDA */}
 
-</div>
+                      <td className="p-4">
 
-            </div>
+                        <input
+                          type="time"
+                          value={funcionario.saida}
+                          onChange={(e) =>
+                            atualizarFuncionario(
+                              index,
+                              "saida",
+                              e.target.value
+                            )
+                          }
+                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
+                        />
+
+                      </td>
+
+                      {/* OBS */}
+
+                      <td className="p-4">
+
+                        <textarea
+                          value={funcionario.obs}
+                          onChange={(e) =>
+                            atualizarFuncionario(
+                              index,
+                              "obs",
+                              e.target.value
+                            )
+                          }
+                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full min-h-[120px] text-sm resize-none"
+                        />
+
+                      </td>
+
+                      {/* AÇÕES */}
+
+                      <td className="p-4 text-center">
+
+                        <button
+                          onClick={() =>
+                            removerFuncionario(
+                              index
+                            )
+                          }
+                          className="bg-[#dc2626] hover:bg-[#ef4444] px-6 py-4 rounded-2xl font-bold text-sm transition-all"
+                        >
+                          Remover
+                        </button>
+
+                      </td>
+
+                    </tr>
+                  )
+                )}
+
+              </tbody>
+
+            </table>
 
           </div>
 
@@ -339,4 +455,3 @@ export default function Page() {
     </main>
   );
 }
-
