@@ -313,153 +313,192 @@ export default function Page() {
                   (funcionario, index) => (
 
                     <tr
-                      key={index}
-                      className="border-t border-[#27272a] bg-black hover:bg-[#111111]"
-                    >
-
-                      {/* NOME */}
-
-                      <td className="p-4">
-
-                       <textarea
-  rows={2}
-  value={funcionario.obs}
-  onChange={(e) =>
-    atualizarFuncionario(
-      index,
-      "obs",
-      e.target.value
-    )
-  }
+  key={index}
   className="
-    w-full
-    bg-[#18181b]
-    border
-    border-[#3f3f46]
-    rounded-md
-    px-2
-    py-1
-    text-sm
-    text-white
-    outline-none
-    resize-none
-    focus:border-[#eab308]
+    border-t
+    border-[#27272a]
+    bg-black
+    hover:bg-[#111111]
   "
-/>
+>
 
-                      </td>
+  <td className="p-2">
+    <input
+      type="text"
+      value={funcionario.nome}
+      onChange={(e) =>
+        atualizarFuncionario(
+          index,
+          "nome",
+          e.target.value
+        )
+      }
+      className="
+        w-full
+        bg-[#18181b]
+        border
+        border-[#3f3f46]
+        rounded-md
+        px-2
+        py-1
+        text-sm
+        text-white
+        outline-none
+      "
+    />
+  </td>
 
-                      {/* SETOR */}
+  <td className="p-2">
+    <input
+      type="text"
+      value={funcionario.setor}
+      onChange={(e) =>
+        atualizarFuncionario(
+          index,
+          "setor",
+          e.target.value
+        )
+      }
+      className="
+        w-full
+        bg-[#18181b]
+        border
+        border-[#3f3f46]
+        rounded-md
+        px-2
+        py-1
+        text-sm
+        text-white
+        outline-none
+      "
+    />
+  </td>
 
-                      <td className="p-4">
+  <td className="p-2">
+    <input
+      type="date"
+      value={funcionario.data}
+      onChange={(e) =>
+        atualizarFuncionario(
+          index,
+          "data",
+          e.target.value
+        )
+      }
+      className="
+        w-full
+        bg-[#18181b]
+        border
+        border-[#3f3f46]
+        rounded-md
+        px-2
+        py-1
+        text-sm
+        text-white
+        outline-none
+      "
+    />
+  </td>
 
-                        <input
-                          value={funcionario.setor}
-                          onChange={(e) =>
-                            atualizarFuncionario(
-                              index,
-                              "setor",
-                              e.target.value
-                            )
-                          }
-                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
-                        />
+  <td className="p-2">
+    <input
+      type="time"
+      value={funcionario.chegada}
+      onChange={(e) =>
+        atualizarFuncionario(
+          index,
+          "chegada",
+          e.target.value
+        )
+      }
+      className="
+        w-full
+        bg-[#18181b]
+        border
+        border-[#3f3f46]
+        rounded-md
+        px-2
+        py-1
+        text-sm
+        text-white
+        outline-none
+      "
+    />
+  </td>
 
-                      </td>
+  <td className="p-2">
+    <input
+      type="time"
+      value={funcionario.saida}
+      onChange={(e) =>
+        atualizarFuncionario(
+          index,
+          "saida",
+          e.target.value
+        )
+      }
+      className="
+        w-full
+        bg-[#18181b]
+        border
+        border-[#3f3f46]
+        rounded-md
+        px-2
+        py-1
+        text-sm
+        text-white
+        outline-none
+      "
+    />
+  </td>
 
-                      {/* DATA */}
+  <td className="p-2">
+    <textarea
+      rows={2}
+      value={funcionario.obs}
+      onChange={(e) =>
+        atualizarFuncionario(
+          index,
+          "obs",
+          e.target.value
+        )
+      }
+      className="
+        w-full
+        bg-[#18181b]
+        border
+        border-[#3f3f46]
+        rounded-md
+        px-2
+        py-1
+        text-sm
+        text-white
+        outline-none
+        resize-none
+      "
+    />
+  </td>
 
-                      <td className="p-4">
+  <td className="p-2 text-center">
+    <button
+      onClick={() =>
+        removerFuncionario(index)
+      }
+      className="
+        bg-red-600
+        hover:bg-red-500
+        px-3
+        py-2
+        rounded-lg
+        text-sm
+        font-bold
+      "
+    >
+      Remover
+    </button>
+  </td>
 
-                        <input
-                          type="date"
-                          value={funcionario.data}
-                          onChange={(e) =>
-                            atualizarFuncionario(
-                              index,
-                              "data",
-                              e.target.value
-                            )
-                          }
-                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
-                        />
-
-                      </td>
-
-                      {/* CHEGADA */}
-
-                      <td className="p-4">
-
-                        <input
-                          type="time"
-                          value={funcionario.chegada}
-                          onChange={(e) =>
-                            atualizarFuncionario(
-                              index,
-                              "chegada",
-                              e.target.value
-                            )
-                          }
-                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
-                        />
-
-                      </td>
-
-                      {/* SAÍDA */}
-
-                      <td className="p-4">
-
-                        <input
-                          type="time"
-                          value={funcionario.saida}
-                          onChange={(e) =>
-                            atualizarFuncionario(
-                              index,
-                              "saida",
-                              e.target.value
-                            )
-                          }
-                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full text-sm"
-                        />
-
-                      </td>
-
-                      {/* OBS */}
-
-                      <td className="p-4">
-
-                        <textarea
-                          value={funcionario.obs}
-                          onChange={(e) =>
-                            atualizarFuncionario(
-                              index,
-                              "obs",
-                              e.target.value
-                            )
-                          }
-                          className="bg-[#18181b] border border-[#3f3f46] rounded-xl p-4 w-full min-h-[120px] text-sm resize-none"
-                        />
-
-                      </td>
-
-                      {/* AÇÕES */}
-
-                      <td className="p-4 text-center">
-
-                        <button
-                          onClick={() =>
-                            removerFuncionario(
-                              index
-                            )
-                          }
-                          className="bg-[#dc2626] hover:bg-[#ef4444] px-6 py-4 rounded-2xl font-bold text-sm transition-all"
-                        >
-                          Remover
-                        </button>
-
-                      </td>
-
-                    </tr>
+</tr>
                   )
                 )}
 
