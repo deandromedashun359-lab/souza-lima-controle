@@ -89,45 +89,52 @@ export default function Page() {
 
   async function exportarPDF() {
 
-    const elemento = pdfRef.current;
+  const elemento = pdfRef.current;
 
-    if (!elemento) return;
+  if (!elemento) return;
 
-    const canvas = await html2canvas(elemento, {
-      backgroundColor: "#000000",
-      scale: 2,
-      useCORS: true,
-    });
+  const canvas = await html2canvas(elemento, {
+    scale: 1,
+    useCORS: true,
+    backgroundColor: "#000000",
+  });
 
-    const imgData =
-      canvas.toDataURL("image/png");
+  const imgData = canvas.toDataURL("image/png");
 
-    const pdf = new jsPDF({
-  orientation: "landscape",
-  unit: "mm",
-  format: "a4",
-});
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
 
-    const pdfWidth =
-      pdf.internal.pageSize.getWidth();
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    const pdfHeight =
-      (canvas.height * pdfWidth) /
-      canvas.width;
+  const imgWidth = canvas.width;
+  const imgHeight = canvas.height;
 
-    pdf.addImage(
-      imgData,
-      "PNG",
-      0,
-      0,
-      pdfWidth,
-      pdfHeight
-    );
+  const ratio = Math.min(
+    pdfWidth / imgWidth,
+    pdfHeight / imgHeight
+  );
 
-    pdf.save(
-      "relatorio-souza-lima.pdf"
-    );
-  }
+  const finalWidth = imgWidth * ratio;
+  const finalHeight = imgHeight * ratio;
+
+  const x = (pdfWidth - finalWidth) / 2;
+  const y = 5;
+
+  pdf.addImage(
+    imgData,
+    "PNG",
+    x,
+    y,
+    finalWidth,
+    finalHeight
+  );
+
+  pdf.save("relatorio-souza-lima.pdf");
+}
 
   return (
 
