@@ -88,16 +88,17 @@ export default function Page() {
   }
 
   async function exportarPDF() {
+  if (!pdfRef.current) return;
 
-  const elemento = pdfRef.current;
-
-  if (!elemento) return;
-
-  const canvas = await html2canvas(elemento, {
-    scale: 1,
-    useCORS: true,
-    backgroundColor: "#000000",
-  });
+  const canvas = await html2canvas(pdfRef.current, {
+  backgroundColor: "#000000",
+  useCORS: true,
+  scale: 1,
+  logging: false,
+  ignoreElements: (element) => {
+    return element.classList?.contains("ignore-pdf");
+  },
+});
 
   const imgData = canvas.toDataURL("image/png");
 
@@ -138,7 +139,7 @@ export default function Page() {
 
   return (
 
-    <main className="min-h-screen bg-black text-white p-6">
+    <main className="min-h-screen bg-[#000000] text-white p-6">
 
       <div className="max-w-[1800px] mx-auto">
 
