@@ -1,105 +1,116 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useRef, useState } from "react";
 
 type Funcionario = {
   nome: string;
   setor: string;
   data: string;
-  chegada: string;
+  entrada: string;
   saida: string;
-  obs: string;
+  observacao: string;
 };
 
-export default function Page() {
+const STORAGE_KEY = "souza-lima-registros";
+
+export default function Home() {
   const pdfRef = useRef<HTMLDivElement>(null);
 
-  const dataAtual = new Date().toISOString().split("T")[0];
+  const hoje = new Date().toISOString().split("T")[0];
 
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
-
-  const [formulario, setFormulario] = useState<Funcionario>({
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>(() => {
+    const dados = localStorage.getItem(STORAGE_KEY);
+    return dados ? JSON.parse(dados) : [];
+  });
+  const [form, setForm] = useState<Funcionario>({
     nome: "",
     setor: "",
-    data: dataAtual,
-    chegada: "",
+    data: hoje,
+    entrada: "",
     saida: "",
-    obs: "",
+    observacao: "",
   });
 
-  function atualizarFormulario(
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(funcionarios)
+    );
+  }, [funcionarios]);
+
+  function atualizarCampo(
     campo: keyof Funcionario,
     valor: string
   ) {
-    setFormulario((prev) => ({
+    setForm((prev) => ({
       ...prev,
       [campo]: valor,
     }));
   }
 
   function adicionarFuncionario() {
-    if (!formulario.nome.trim() || !formulario.setor.trim()) {
-      alert("Preencha nome e setor.");
+    if (!form.nome || !form.setor) {
+      alert("Preencha nome e setor");
       return;
     }
 
-    setFuncionarios((prev) => [...prev, formulario]);
+    setFuncionarios((prev) => [...prev, form]);
 
-    setFormulario({
+    setForm({
       nome: "",
       setor: "",
-      data: dataAtual,
-      chegada: "",
+      data: hoje,
+      entrada: "",
       saida: "",
-      obs: "",
+      observacao: "",
     });
   }
 
   function removerFuncionario(index: number) {
-    setFuncionarios((prev) =>
-      prev.filter((_, i) => i !== index)
-    );
+    const novaLista = [...funcionarios];
+    novaLista.splice(index, 1);
+    setFuncionarios(novaLista);
+  }
+
+  function limparTudo() {
+    if (confirm("Deseja apagar todos os registros?")) {
+      setFuncionarios([]);
+      localStorage.removeItem(STORAGE_KEY);
+    }
   }
 
   async function exportarPDF() {
     if (!pdfRef.current) return;
 
-    try {
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#09090b",
-      });
+    const canvas = await html2canvas(pdfRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#111111",
+      logging: false,
+    });
 
-      const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/png");
 
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "mm",
-        format: "a4",
-      });
+    const pdf = new jsPDF("landscape", "mm", "a4");
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
+    const larguraPDF =
+      pdf.internal.pageSize.getWidth();
 
-      const imgHeight =
-        (canvas.height * pdfWidth) / canvas.width;
+    const alturaPDF =
+      (canvas.height * larguraPDF) / canvas.width;
 
-      pdf.addImage(
-        imgData,
-        "PNG",
-        0,
-        0,
-        pdfWidth,
-        imgHeight
-      );
+    pdf.addImage(
+      imgData,
+      "PNG",
+      0,
+      0,
+      larguraPDF,
+      alturaPDF
+    );
 
-      pdf.save("relatorio-souza-lima.pdf");
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao exportar PDF");
-    }
+    pdf.save("relatorio-souza-lima.pdf");
   }
 
   return (
@@ -108,170 +119,128 @@ export default function Page() {
         minHeight: "100vh",
         backgroundColor: "#000000",
         color: "#ffffff",
-        padding: "32px",
+        padding: "30px",
+        fontFamily: "Arial",
       }}
     >
-      <div
-        style={{
-          maxWidth: "1600px",
-          margin: "0 auto",
-        }}
-      >
-        <div
+      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+        <h1
           style={{
             textAlign: "center",
-            marginBottom: "32px",
+            color: "#facc15",
+            fontSize: "36px",
+            fontWeight: "bold",
+            marginBottom: "30px",
           }}
         >
-          <h1
-            style={{
-              fontSize: "42px",
-              fontWeight: 900,
-              color: "#facc15",
-            }}
-          >
-            Souza Lima
-          </h1>
-
-          <p style={{ color: "#a1a1aa" }}>
-            Controle de Funcionários
-          </p>
-        </div>
+          Controle Souza Lima
+        </h1>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "360px 1fr",
+            gridTemplateColumns: "1fr 2fr",
             gap: "24px",
           }}
         >
-          {/* FORMULÁRIO */}
-
           <div
             style={{
-              background: "#18181b",
-              padding: "24px",
-              borderRadius: "20px",
+              backgroundColor: "#18181b",
+              padding: "20px",
+              borderRadius: "16px",
             }}
           >
-            <h2
+            <input
+              placeholder="Nome"
+              value={form.nome}
+              onChange={(e) =>
+                atualizarCampo("nome", e.target.value)
+              }
+              style={inputStyle}
+            />
+
+            <input
+              placeholder="Setor"
+              value={form.setor}
+              onChange={(e) =>
+                atualizarCampo("setor", e.target.value)
+              }
+              style={inputStyle}
+            />
+
+            <input
+              type="date"
+              value={form.data}
+              onChange={(e) =>
+                atualizarCampo("data", e.target.value)
+              }
+              style={inputStyle}
+            />
+
+            <input
+              type="time"
+              value={form.entrada}
+              onChange={(e) =>
+                atualizarCampo(
+                  "entrada",
+                  e.target.value
+                )
+              }
+              style={inputStyle}
+            />
+
+            <input
+              type="time"
+              value={form.saida}
+              onChange={(e) =>
+                atualizarCampo("saida", e.target.value)
+              }
+              style={inputStyle}
+            />
+
+            <textarea
+              placeholder="Observações"
+              value={form.observacao}
+              onChange={(e) =>
+                atualizarCampo(
+                  "observacao",
+                  e.target.value
+                )
+              }
               style={{
-                color: "#facc15",
-                fontSize: "24px",
-                marginBottom: "20px",
+                ...inputStyle,
+                minHeight: "100px",
               }}
+            />
+
+            <button
+              onClick={adicionarFuncionario}
+              style={botaoAmarelo}
             >
-              Registrar Funcionário
-            </h2>
+              Adicionar
+            </button>
 
-            <div
-              style={{
-                display: "grid",
-                gap: "12px",
-              }}
+            <button
+              onClick={exportarPDF}
+              style={botaoBranco}
             >
-              <input
-                type="text"
-                placeholder="Nome"
-                value={formulario.nome}
-                onChange={(e) =>
-                  atualizarFormulario(
-                    "nome",
-                    e.target.value
-                  )
-                }
-                style={inputStyle}
-              />
+              Exportar PDF
+            </button>
 
-              <input
-                type="text"
-                placeholder="Setor"
-                value={formulario.setor}
-                onChange={(e) =>
-                  atualizarFormulario(
-                    "setor",
-                    e.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-
-              <input
-                type="date"
-                value={formulario.data}
-                onChange={(e) =>
-                  atualizarFormulario(
-                    "data",
-                    e.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-
-              <input
-                type="time"
-                value={formulario.chegada}
-                onChange={(e) =>
-                  atualizarFormulario(
-                    "chegada",
-                    e.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-
-              <input
-                type="time"
-                value={formulario.saida}
-                onChange={(e) =>
-                  atualizarFormulario(
-                    "saida",
-                    e.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-
-              <textarea
-                placeholder="Observações"
-                value={formulario.obs}
-                onChange={(e) =>
-                  atualizarFormulario(
-                    "obs",
-                    e.target.value
-                  )
-                }
-                style={{
-                  ...inputStyle,
-                  minHeight: "100px",
-                  resize: "none",
-                }}
-              />
-
-              <button
-                onClick={adicionarFuncionario}
-                style={botaoAmarelo}
-              >
-                Adicionar Funcionário
-              </button>
-
-              <button
-                onClick={exportarPDF}
-                style={botaoBranco}
-              >
-                Exportar PDF
-              </button>
-            </div>
+            <button
+              onClick={limparTudo}
+              style={botaoVermelho}
+            >
+              Limpar Tudo
+            </button>
           </div>
-
-          {/* TABELA */}
 
           <div
             ref={pdfRef}
             style={{
-              backgroundColor: "#09090b",
-              borderRadius: "20px",
+              backgroundColor: "#111111",
               padding: "20px",
+              borderRadius: "16px",
               overflowX: "auto",
             }}
           >
@@ -299,51 +268,27 @@ export default function Page() {
               </thead>
 
               <tbody>
-                {funcionarios.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      style={{
-                        textAlign: "center",
-                        padding: "24px",
-                        color: "#71717a",
-                      }}
-                    >
-                      Nenhum funcionário registrado
-                    </td>
-                  </tr>
-                )}
-
-                {funcionarios.map((f, index) => (
-                  <tr
-                    key={index}
-                    style={{
-                      borderTop:
-                        "1px solid #27272a",
-                    }}
-                  >
+                {funcionarios.map((f, i) => (
+                  <tr key={i}>
                     <td style={tdStyle}>{f.nome}</td>
                     <td style={tdStyle}>{f.setor}</td>
                     <td style={tdStyle}>{f.data}</td>
-                    <td style={tdStyle}>{f.chegada}</td>
+                    <td style={tdStyle}>{f.entrada}</td>
                     <td style={tdStyle}>{f.saida}</td>
-                    <td style={tdStyle}>{f.obs}</td>
+                    <td style={tdStyle}>
+                      {f.observacao}
+                    </td>
                     <td style={tdStyle}>
                       <button
                         onClick={() =>
-                          removerFuncionario(
-                            index
-                          )
+                          removerFuncionario(i)
                         }
                         style={{
-                          background:
-                            "#dc2626",
+                          backgroundColor: "#dc2626",
                           color: "#fff",
                           border: "none",
-                          padding:
-                            "8px 12px",
-                          borderRadius:
-                            "8px",
+                          padding: "8px 12px",
+                          borderRadius: "8px",
                           cursor: "pointer",
                         }}
                       >
@@ -353,6 +298,7 @@ export default function Page() {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         </div>
@@ -364,39 +310,54 @@ export default function Page() {
 const inputStyle = {
   width: "100%",
   padding: "12px",
-  borderRadius: "10px",
-  background: "#000000",
+  marginBottom: "12px",
+  backgroundColor: "#000000",
   color: "#ffffff",
   border: "1px solid #3f3f46",
-};
-
-const botaoAmarelo = {
-  background: "#facc15",
-  color: "#000",
-  border: "none",
-  padding: "14px",
   borderRadius: "10px",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const botaoBranco = {
-  background: "#ffffff",
-  color: "#000",
-  border: "none",
-  padding: "14px",
-  borderRadius: "10px",
-  fontWeight: 700,
-  cursor: "pointer",
 };
 
 const thStyle = {
   padding: "12px",
-  fontSize: "14px",
   textAlign: "left" as const,
 };
 
 const tdStyle = {
   padding: "12px",
-  fontSize: "14px",
+  borderBottom: "1px solid #27272a",
+};
+
+const botaoAmarelo = {
+  width: "100%",
+  padding: "12px",
+  marginBottom: "12px",
+  backgroundColor: "#facc15",
+  color: "#000",
+  border: "none",
+  borderRadius: "10px",
+  fontWeight: "bold" as const,
+  cursor: "pointer",
+};
+
+const botaoBranco = {
+  width: "100%",
+  padding: "12px",
+  marginBottom: "12px",
+  backgroundColor: "#ffffff",
+  color: "#000",
+  border: "none",
+  borderRadius: "10px",
+  fontWeight: "bold" as const,
+  cursor: "pointer",
+};
+
+const botaoVermelho = {
+  width: "100%",
+  padding: "12px",
+  backgroundColor: "#dc2626",
+  color: "#ffffff",
+  border: "none",
+  borderRadius: "10px",
+  fontWeight: "bold" as const,
+  cursor: "pointer",
 };
