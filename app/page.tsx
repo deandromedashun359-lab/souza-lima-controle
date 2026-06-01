@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { useEffect, useRef, useState } from "react";
 
 type Funcionario = {
   nome: string;
@@ -17,13 +17,11 @@ const STORAGE_KEY = "souza-lima-registros";
 
 export default function Home() {
   const pdfRef = useRef<HTMLDivElement>(null);
-
   const hoje = new Date().toISOString().split("T")[0];
 
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>(() => {
-    const dados = localStorage.getItem(STORAGE_KEY);
-    return dados ? JSON.parse(dados) : [];
-  });
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [carregado, setCarregado] = useState(false);
+
   const [form, setForm] = useState<Funcionario>({
     nome: "",
     setor: "",
@@ -34,11 +32,25 @@ export default function Home() {
   });
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(funcionarios)
-    );
-  }, [funcionarios]);
+    if (typeof window !== "undefined") {
+      const dadosSalvos = localStorage.getItem(STORAGE_KEY);
+
+      if (dadosSalvos) {
+        setFuncionarios(JSON.parse(dadosSalvos));
+      }
+
+      setCarregado(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (carregado && typeof window !== "undefined") {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(funcionarios)
+      );
+    }
+  }, [funcionarios, carregado]);
 
   function atualizarCampo(
     campo: keyof Funcionario,
@@ -69,15 +81,18 @@ export default function Home() {
   }
 
   function removerFuncionario(index: number) {
-    const novaLista = [...funcionarios];
-    novaLista.splice(index, 1);
-    setFuncionarios(novaLista);
+    setFuncionarios((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
   }
 
   function limparTudo() {
     if (confirm("Deseja apagar todos os registros?")) {
       setFuncionarios([]);
-      localStorage.removeItem(STORAGE_KEY);
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
   }
 
@@ -95,9 +110,7 @@ export default function Home() {
 
     const pdf = new jsPDF("landscape", "mm", "a4");
 
-    const larguraPDF =
-      pdf.internal.pageSize.getWidth();
-
+    const larguraPDF = pdf.internal.pageSize.getWidth();
     const alturaPDF =
       (canvas.height * larguraPDF) / canvas.width;
 
@@ -113,43 +126,17 @@ export default function Home() {
     pdf.save("relatorio-souza-lima.pdf");
   }
 
+  if (!carregado) return null;
+
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#000000",
-        color: "#ffffff",
-        padding: "30px",
-        fontFamily: "Arial",
-      }}
-    >
+    <main style={mainStyle}>
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        <h1
-          style={{
-            textAlign: "center",
-            color: "#facc15",
-            fontSize: "36px",
-            fontWeight: "bold",
-            marginBottom: "30px",
-          }}
-        >
+        <h1 style={tituloStyle}>
           Controle Souza Lima
         </h1>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 2fr",
-            gap: "24px",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#18181b",
-              padding: "20px",
-              borderRadius: "16px",
-            }}
-          >
+        <div style={gridStyle}>
+          <div style={cardStyle}>
             <input
               placeholder="Nome"
               value={form.nome}
@@ -181,10 +168,7 @@ export default function Home() {
               type="time"
               value={form.entrada}
               onChange={(e) =>
-                atualizarCampo(
-                  "entrada",
-                  e.target.value
-                )
+                atualizarCampo("entrada", e.target.value)
               }
               style={inputStyle}
             />
@@ -235,28 +219,10 @@ export default function Home() {
             </button>
           </div>
 
-          <div
-            ref={pdfRef}
-            style={{
-              backgroundColor: "#111111",
-              padding: "20px",
-              borderRadius: "16px",
-              overflowX: "auto",
-            }}
-          >
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-              }}
-            >
+          <div ref={pdfRef} style={tabelaContainer}>
+            <table style={tableStyle}>
               <thead>
-                <tr
-                  style={{
-                    backgroundColor: "#facc15",
-                    color: "#000",
-                  }}
-                >
+                <tr style={theadStyle}>
                   <th style={thStyle}>Nome</th>
                   <th style={thStyle}>Setor</th>
                   <th style={thStyle}>Data</th>
@@ -283,14 +249,7 @@ export default function Home() {
                         onClick={() =>
                           removerFuncionario(i)
                         }
-                        style={{
-                          backgroundColor: "#dc2626",
-                          color: "#fff",
-                          border: "none",
-                          padding: "8px 12px",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                        }}
+                        style={botaoVermelhoMini}
                       >
                         Remover
                       </button>
@@ -298,7 +257,6 @@ export default function Home() {
                   </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
         </div>
@@ -307,12 +265,57 @@ export default function Home() {
   );
 }
 
+const mainStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#000",
+  color: "#fff",
+  padding: "30px",
+  fontFamily: "Arial",
+};
+
+const tituloStyle = {
+  textAlign: "center" as const,
+  color: "#facc15",
+  fontSize: "36px",
+  fontWeight: "bold" as const,
+  marginBottom: "30px",
+};
+
+const gridStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr 2fr",
+  gap: "24px",
+};
+
+const cardStyle = {
+  backgroundColor: "#18181b",
+  padding: "20px",
+  borderRadius: "16px",
+};
+
+const tabelaContainer = {
+  backgroundColor: "#111111",
+  padding: "20px",
+  borderRadius: "16px",
+  overflowX: "auto" as const,
+};
+
+const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse" as const,
+};
+
+const theadStyle = {
+  backgroundColor: "#facc15",
+  color: "#000",
+};
+
 const inputStyle = {
   width: "100%",
   padding: "12px",
   marginBottom: "12px",
-  backgroundColor: "#000000",
-  color: "#ffffff",
+  backgroundColor: "#000",
+  color: "#fff",
   border: "1px solid #3f3f46",
   borderRadius: "10px",
 };
@@ -340,24 +343,21 @@ const botaoAmarelo = {
 };
 
 const botaoBranco = {
-  width: "100%",
-  padding: "12px",
-  marginBottom: "12px",
+  ...botaoAmarelo,
   backgroundColor: "#ffffff",
-  color: "#000",
-  border: "none",
-  borderRadius: "10px",
-  fontWeight: "bold" as const,
-  cursor: "pointer",
 };
 
 const botaoVermelho = {
-  width: "100%",
-  padding: "12px",
+  ...botaoAmarelo,
   backgroundColor: "#dc2626",
-  color: "#ffffff",
+  color: "#fff",
+};
+
+const botaoVermelhoMini = {
+  backgroundColor: "#dc2626",
+  color: "#fff",
   border: "none",
-  borderRadius: "10px",
-  fontWeight: "bold" as const,
+  padding: "8px 12px",
+  borderRadius: "8px",
   cursor: "pointer",
 };
